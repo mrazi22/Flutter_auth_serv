@@ -3,6 +3,9 @@ const mysql = require('mysql');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+const multer = require('multer');
+const path = require('path'); 
+
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
@@ -20,6 +23,14 @@ db.connect(function(err) {
         console.log('Connected to MySQL database');
     }
 });
+
+const storage = multer.diskStorage({
+    destination: './uploads/',
+    filename: function (req, file, cb) {
+        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
 app.post('/register', async (req, res) => {
     const { uid, username, email, password } = req.body;
 
@@ -99,6 +110,25 @@ app.post('/login', (req, res) => {
                 time: user.time
             }
         });
+    });
+});
+app.post('/createProject', upload.single('image'), (req, res) => { // Use multer middleware
+    const { projectName, createdOn, uid } = req.body; // use uid instead of userid
+    const imagePath = req.file ? req.file.path : null;
+
+    if (!projectName || !uid || !createdOn) { // use uid instead of userid
+        return res.status(400).json({ status: 'error', message: 'Project name, date, and user ID are required' });
+    }
+
+    const insertProjectQuery = 'INSERT INTO projects (projectName, createdOn, adminUserId, imagePath) VALUES (?, ?, ?, ?)';
+
+    db.query(insertProjectQuery, [projectName, createdOn, uid, imagePath], (err, result) => { // use uid instead of userid
+        if (err) {
+            console.error('Error creating project:', err);
+            return res.status(500).json({ status: 'error', message: 'Error creating project' });
+        }
+
+        res.status(201).json({ status: 'success', message: 'Project created successfully' });
     });
 });
 
