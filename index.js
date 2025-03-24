@@ -112,23 +112,17 @@ app.post('/login', (req, res) => {
         });
     });
 });
-app.post('/createProject', upload.single('image'), (req, res) => { // Use multer middleware
-    const { projectName, createdOn, uid } = req.body; // use uid instead of userid
-    const imagePath = req.file ? req.file.path : null;
+app.post('/create-project', upload.single('image'), (req, res) => {
+    const { projectid, publisherid, accessid, admin, projecttitle, date } = req.body;
+    const image = req.file ? req.file.filename : null; // Get filename if uploaded
 
-    if (!projectName || !uid || !createdOn) { // use uid instead of userid
-        return res.status(400).json({ status: 'error', message: 'Project name, date, and user ID are required' });
-    }
-
-    const insertProjectQuery = 'INSERT INTO projects (projectName, createdOn, adminUserId, imagePath) VALUES (?, ?, ?, ?)';
-
-    db.query(insertProjectQuery, [projectName, createdOn, uid, imagePath], (err, result) => { // use uid instead of userid
+    const insertProjectQuery = 'INSERT INTO projects (projectid, publisherid, accessid, admin, projecttitle, date, image) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(insertProjectQuery, [projectid, publisherid, accessid, admin, projecttitle, date, image], (err, result) => {
         if (err) {
             console.error('Error creating project:', err);
             return res.status(500).json({ status: 'error', message: 'Error creating project' });
         }
-
-        res.status(201).json({ status: 'success', message: 'Project created successfully' });
+        res.status(200).json({ status: 'success', message: 'Project created successfully' });
     });
 });
 
